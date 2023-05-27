@@ -4,6 +4,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use color_print::cprintln;
 use crossbeam::sync::WaitGroup;
 use scheduled_thread_pool::ScheduledThreadPool;
 
@@ -28,11 +29,11 @@ fn convert_all(p: PathBuf, pool: &ScheduledThreadPool, wg: &WaitGroup) {
                 for r in v {
                     match r {
                         Ok(e) => convert_all(e.path(), pool, wg),
-                        Err(e) => println!("failed to read a directory: {}", e)
+                        Err(e) => cprintln!("<y>failed to read a directory: {}</y>", e)
                     }
                 }
             }
-            Err(e) => println!("failed to read {}: {}", p.to_string_lossy(), e)
+            Err(e) => cprintln!("<y>failed to read {}: {}</y>", p.to_string_lossy(), e)
         }
         return;
     }
@@ -44,7 +45,7 @@ fn convert_all(p: PathBuf, pool: &ScheduledThreadPool, wg: &WaitGroup) {
     let wg = wg.clone();
     _ = pool.execute(move || {
         if let Err(e) = convert(&p) {
-            println!("failed to convert {}: {}", p.to_string_lossy(), e);
+            cprintln!("<y>failed to convert {}: {}</y>", p.to_string_lossy(), e);
         }
         drop(wg);
     })
