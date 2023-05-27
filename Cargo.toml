@@ -1,0 +1,15 @@
+[package]
+name = "sd-png2webp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { version = "1.0.71", features = ["backtrace"] }
+riff = "1.0.1"
+rexif = "0.7.3"
+byteorder = "1"
+png = "0.17.8"
+image = "0.24.6"
+webp = "0.2.2"
