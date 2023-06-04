@@ -1,3 +1,11 @@
+// image.rs
+//
+// Copyright (c) 2023 Junpei Kawamoto
+//
+// This software is released under the MIT License.
+//
+// http://opensource.org/licenses/mit-license.php
+
 use std::io::{BufRead, Cursor, Read, Seek, SeekFrom, Write};
 
 use anyhow::{bail, Context, Result};
