@@ -47,18 +47,23 @@ fn vp8x_chunk(w: u32, h: u32) -> Result<ChunkContents> {
 
 /// Creates an EXIF chunk consisting of the given comment.
 fn exif_chunk(comment: &str) -> Result<ChunkContents> {
-   Ok(ChunkContents::Data(chunk_id("EXIF")?, exif(comment)?))
+    Ok(ChunkContents::Data(chunk_id("EXIF")?, exif(comment)?))
 }
 
 /// Converts the given image with r and writes the result via w.
 pub fn convert<R, W>(mut r: R, mut w: W) -> Result<()>
-    where R: BufRead + Seek, W: Write + Seek
+where
+    R: BufRead + Seek,
+    W: Write + Seek,
 {
-    let img = image::io::Reader::new(&mut r).with_guessed_format()?.decode()?;
+    let img = image::io::Reader::new(&mut r)
+        .with_guessed_format()?
+        .decode()?;
     let webp = match webp::Encoder::from_image(&img) {
         Ok(v) => v,
-        Err(e) => bail!("failed to create webp encoder: {}", e)
-    }.encode_lossless();
+        Err(e) => bail!("failed to create webp encoder: {}", e),
+    }
+    .encode_lossless();
 
     r.seek(SeekFrom::Start(0))?;
     match parameters(&mut r)? {
@@ -67,23 +72,28 @@ pub fn convert<R, W>(mut r: R, mut w: W) -> Result<()>
             let mut stream = Cursor::new(webp.as_ref());
             let root = Chunk::read(&mut stream, 0)?;
 
-            let bitstream = root.iter(&mut stream).find(|c| {
-                let id = c.id();
-                let ids = id.as_str();
-                ids == "VP8 " || ids == "VP8L"
-            }).context("no bitstreams are found")?;
+            let bitstream = root
+                .iter(&mut stream)
+                .find(|c| {
+                    let id = c.id();
+                    let ids = id.as_str();
+                    ids == "VP8 " || ids == "VP8L"
+                })
+                .context("no bitstreams are found")?;
             ChunkContents::Children(
-                ChunkId { value: [0x52, 0x49, 0x46, 0x46] },
-                ChunkId { value: [0x57, 0x45, 0x42, 0x50] },
+                ChunkId {
+                    value: [0x52, 0x49, 0x46, 0x46],
+                },
+                ChunkId {
+                    value: [0x57, 0x45, 0x42, 0x50],
+                },
                 vec![
                     vp8x_chunk(img.width(), img.height())?,
-                    ChunkContents::Data(
-                        bitstream.id(),
-                        bitstream.read_contents(&mut stream)?,
-                    ),
+                    ChunkContents::Data(bitstream.id(), bitstream.read_contents(&mut stream)?),
                     exif_chunk(&p)?,
                 ],
-            ).write(&mut w)?;
+            )
+            .write(&mut w)?;
             Ok(())
         }
     }

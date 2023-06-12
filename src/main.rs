@@ -37,11 +37,11 @@ fn convert_all(p: PathBuf, pool: &ScheduledThreadPool, wg: &WaitGroup) {
                 for r in v {
                     match r {
                         Ok(e) => convert_all(e.path(), pool, wg),
-                        Err(e) => cprintln!("<y>failed to read a directory: {}</y>", e)
+                        Err(e) => cprintln!("<y>failed to read a directory: {}</y>", e),
                     }
                 }
             }
-            Err(e) => cprintln!("<y>failed to read {}: {}</y>", p.to_string_lossy(), e)
+            Err(e) => cprintln!("<y>failed to read {}: {}</y>", p.to_string_lossy(), e),
         }
         return;
     }
@@ -59,7 +59,6 @@ fn convert_all(p: PathBuf, pool: &ScheduledThreadPool, wg: &WaitGroup) {
     })
 }
 
-
 fn main() {
     let wg = WaitGroup::new();
     let pool = ScheduledThreadPool::new(num_cpus::get() / 2 + 1);
@@ -68,5 +67,3 @@ fn main() {
     }
     wg.wait();
 }
-
-
