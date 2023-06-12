@@ -68,5 +68,3 @@ fn main() {
     }
     wg.wait();
 }
-
-
