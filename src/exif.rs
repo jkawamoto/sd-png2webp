@@ -64,9 +64,10 @@ pub fn exif(value: &str) -> Result<Vec<u8>> {
             },
         ],
         le: false,
-    }.serialize().context("failed to serialize exif data")
+    }
+    .serialize()
+    .context("failed to serialize exif data")
 }
-
 
 /// Encode the given text in UTF16 and returns it as Vec<u8>.
 fn encode_utf16(v: &str) -> Vec<u8> {
