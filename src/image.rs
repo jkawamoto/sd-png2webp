@@ -15,6 +15,26 @@ use riff::{Chunk, ChunkContents, ChunkId};
 
 use crate::exif::exif;
 
+static WEBP_ID: ChunkId = ChunkId {
+    value: [0x57, 0x45, 0x42, 0x50],
+};
+
+static VP8_ID: ChunkId = ChunkId {
+    value: [0x56, 0x50, 0x38, 0x20],
+};
+
+static VP8L_ID: ChunkId = ChunkId {
+    value: [0x56, 0x50, 0x38, 0x4C],
+};
+
+static VP8X_ID: ChunkId = ChunkId {
+    value: [0x56, 0x50, 0x38, 0x58],
+};
+
+static EXIF_ID: ChunkId = ChunkId {
+    value: [0x45, 0x58, 0x49, 0x46],
+};
+
 /// Reads the given PNG image and returns the generation parameters if the image contains them.
 fn parameters<R: Read>(r: &mut R) -> Result<Option<String>> {
     let reader = Decoder::new(r).read_info()?;
@@ -26,13 +46,8 @@ fn parameters<R: Read>(r: &mut R) -> Result<Option<String>> {
     Ok(None)
 }
 
-/// Creates a chunk ID representing the given str.
-fn chunk_id(s: &str) -> Result<ChunkId> {
-    ChunkId::new(s).or_else(|e| bail!("failed to create a chunk ID: {}", e))
-}
-
 /// Creates a VP8X chunk with the given width and height.
-fn vp8x_chunk(w: u32, h: u32) -> Result<ChunkContents> {
+fn vp8x_chunk(w: u32, h: u32) -> ChunkContents {
     let mut data = vec![8, 0, 0, 0];
 
     let mut buf = [0; 4];
@@ -42,12 +57,12 @@ fn vp8x_chunk(w: u32, h: u32) -> Result<ChunkContents> {
     byteorder::LittleEndian::write_u32(&mut buf, h - 1);
     data.extend(&buf[..3]);
 
-    Ok(ChunkContents::Data(chunk_id("VP8X")?, data))
+    ChunkContents::Data(VP8X_ID, data)
 }
 
 /// Creates an EXIF chunk consisting of the given comment.
 fn exif_chunk(comment: &str) -> Result<ChunkContents> {
-    Ok(ChunkContents::Data(chunk_id("EXIF")?, exif(comment)?))
+    Ok(ChunkContents::Data(EXIF_ID, exif(comment)?))
 }
 
 /// Converts the given image with r and writes the result via w.
@@ -74,21 +89,19 @@ where
 
             let bitstream = root
                 .iter(&mut stream)
-                .find(|c| {
-                    let id = c.id();
-                    let ids = id.as_str();
-                    ids == "VP8 " || ids == "VP8L"
+                .find(|c| match c {
+                    Ok(c) => {
+                        let id = c.id();
+                        id == VP8_ID || id == VP8L_ID
+                    }
+                    Err(_) => false,
                 })
-                .context("no bitstreams are found")?;
+                .context("no bitstreams are found")??;
             ChunkContents::Children(
-                ChunkId {
-                    value: [0x52, 0x49, 0x46, 0x46],
-                },
-                ChunkId {
-                    value: [0x57, 0x45, 0x42, 0x50],
-                },
+                riff::RIFF_ID,
+                WEBP_ID,
                 vec![
-                    vp8x_chunk(img.width(), img.height())?,
+                    vp8x_chunk(img.width(), img.height()),
                     ChunkContents::Data(bitstream.id(), bitstream.read_contents(&mut stream)?),
                     exif_chunk(&p)?,
                 ],
@@ -96,5 +109,19 @@ where
             .write(&mut w)?;
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::image::{EXIF_ID, VP8L_ID, VP8X_ID, VP8_ID, WEBP_ID};
+
+    #[test]
+    fn test_ids() {
+        assert_eq!(WEBP_ID.as_str(), "WEBP");
+        assert_eq!(VP8_ID.as_str(), "VP8 ");
+        assert_eq!(VP8L_ID.as_str(), "VP8L");
+        assert_eq!(VP8X_ID.as_str(), "VP8X");
+        assert_eq!(EXIF_ID.as_str(), "EXIF");
     }
 }
