@@ -1,6 +1,6 @@
 [package]
 name = "sd-png2webp"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Junpei Kawamoto <kawamoto.junpei@gmail.com>"]
 edition = "2021"
 description = "Converts PNGs to WebP, embedding AUTOMATIC1111 Stable Diffusion web UI's generation data."
