@@ -71,7 +71,7 @@ where
     R: BufRead + Seek,
     W: Write + Seek,
 {
-    let img = image::io::Reader::new(&mut r)
+    let img = image::ImageReader::new(&mut r)
         .with_guessed_format()?
         .decode()?;
     let webp = match webp::Encoder::from_image(&img) {
